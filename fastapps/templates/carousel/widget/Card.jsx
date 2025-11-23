@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { Star } from "lucide-react";
 
 export default function Card({ card }) {
@@ -27,12 +28,9 @@ export default function Card({ card }) {
           </div>
         ) : null}
         <div className="mt-5">
-          <button
-            type="button"
-            className="cursor-pointer inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-medium bg-white text-black border-black/20 hover:bg-black/5 active:bg-black/10 dark:bg-white/10 dark:text-white dark:border-white/20 dark:hover:bg-white/20 dark:active:bg-white/30"
-          >
+          <Button variant="soft" color="secondary" size="sm" pill>
             Learn more
-          </button>
+          </Button>
         </div>
       </div>
     </div>

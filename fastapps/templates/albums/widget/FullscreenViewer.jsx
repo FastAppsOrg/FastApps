@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { ArrowLeft } from "lucide-react";
 import { useMaxHeight } from "fastapps";
 import FilmStrip from "./FilmStrip";
@@ -34,18 +35,18 @@ export default function FullscreenViewer({ album, onBack }) {
     >
       {/* Back button */}
       {onBack && (
-        <button
+        <Button
           aria-label="Back to albums"
-          className="absolute left-4 top-4 z-20 inline-flex items-center justify-center h-10 w-10 rounded-full bg-white text-black shadow-lg ring ring-black/5 hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/40"
+          className="absolute left-4 top-4 z-20 shadow-lg"
+          variant="outline"
+          color="secondary"
+          size="md"
+          uniform
+          pill
           onClick={onBack}
-          type="button"
         >
-          <ArrowLeft
-            strokeWidth={1.5}
-            className="h-5 w-5"
-            aria-hidden="true"
-          />
-        </button>
+          <ArrowLeft strokeWidth={1.5} className="h-4 w-4" aria-hidden="true" />
+        </Button>
       )}
 
       <div className="absolute inset-0 flex flex-row overflow-hidden">
