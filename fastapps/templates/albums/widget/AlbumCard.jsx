@@ -20,12 +20,14 @@ function AlbumCard({ album, onSelect }) {
       block
     >
       <div className="w-full overflow-hidden rounded-2xl shadow-card bg-surface">
-        <Image
-          src={album.cover}
-          alt={title}
-          className="w-full h-auto"
-          loading="lazy"
-        />
+        <div className="aspect-[4/3] w-full overflow-hidden">
+          <Image
+            src={album.cover}
+            alt={title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
       </div>
       <div className="pt-3 px-1.5 w-full">
         <div className="text-base font-medium truncate text-foreground">
