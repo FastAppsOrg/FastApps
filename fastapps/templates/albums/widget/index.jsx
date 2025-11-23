@@ -143,13 +143,12 @@ function {ClassName}Inner() {
     <div
       className={
         "relative antialiased w-full text-default " +
-        (isFullscreen
-          ? "bg-surface"
-          : "bg-transparent overflow-hidden")
+        (isFullscreen ? "bg-surface" : "bg-transparent")
       }
       style={{
-        maxHeight,
+        maxHeight: !isFullscreen ? maxHeight : undefined,
         height: isFullscreen ? maxHeight : undefined,
+        overflow: !isFullscreen ? "auto" : undefined,
       }}
     >
       {!isFullscreen && (
