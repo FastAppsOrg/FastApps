@@ -1,4 +1,5 @@
 import React from "react";
+import { Image } from "@openai/apps-sdk-ui/components/Image";
 
 export default function FilmStrip({ album, selectedIndex, onSelect }) {
   if (!album?.photos?.length) {
@@ -13,16 +14,16 @@ export default function FilmStrip({ album, selectedIndex, onSelect }) {
           type="button"
           onClick={() => onSelect?.(idx)}
           className={
-            "block w-full p-[1px] pointer-events-auto rounded-xl cursor-pointer border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/40 dark:focus-visible:ring-white/40 " +
+            "block w-full p-[1px] pointer-events-auto rounded-xl cursor-pointer border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-default " +
             (idx === selectedIndex
-              ? "border-black bg-black/5 dark:border-white dark:bg-white/10"
-              : "border-black/10 hover:border-black/50 dark:border-white/20 dark:hover:border-white/60")
+              ? "border-strong bg-primary-soft-alpha"
+              : "border-default hover:border-strong")
           }
           aria-pressed={idx === selectedIndex}
           aria-label={`View ${photo.title || `photo ${idx + 1}`}`}
         >
           <div className="aspect-[5/3] rounded-lg overflow-hidden w-full">
-            <img
+            <Image
               src={photo.url}
               alt={photo.title || `Photo ${idx + 1}`}
               className="h-full w-full object-cover"

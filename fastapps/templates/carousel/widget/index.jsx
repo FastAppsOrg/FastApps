@@ -1,11 +1,14 @@
 import React from "react";
+import { AppsSDKUIProvider } from "@openai/apps-sdk-ui/components/AppsSDKUIProvider";
+import { Button } from "@openai/apps-sdk-ui/components/Button";
+import { EmptyMessage } from "@openai/apps-sdk-ui/components/EmptyMessage";
 import { useWidgetProps } from "fastapps";
 import useEmblaCarousel from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Card from "./Card";
 import "./index.css";
 
-function {ClassName}() {
+function {ClassName}Inner() {
   const { cards } = useWidgetProps() || {};
 
   const normalizedCards = Array.isArray(cards) ? cards : [];
@@ -41,9 +44,9 @@ function {ClassName}() {
   if (!hasCards) {
     return (
       <div className="antialiased relative w-full py-5">
-        <div className="text-center text-sm text-black/80 dark:text-white/80 py-6">
+        <EmptyMessage>
           No items to display. Provide up to 8 entries for best results.
-        </div>
+        </EmptyMessage>
       </div>
     );
   }
@@ -63,35 +66,41 @@ function {ClassName}() {
         </div>
       </div>
       {canPrev && (
-        <button
+        <Button
           aria-label="Previous carousel item"
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center h-8 w-8 rounded-full bg-white text-black shadow-sm ring-1 ring-black/10 hover:bg-black/5 dark:bg-white/10 dark:text-white dark:ring-white/20 dark:hover:bg-white/20"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+          variant="outline"
+          color="secondary"
+          size="sm"
+          uniform
+          pill
           onClick={() => emblaApi && emblaApi.scrollPrev()}
-          type="button"
         >
-          <ArrowLeft
-            strokeWidth={1.5}
-            className="h-4.5 w-4.5"
-            aria-hidden="true"
-          />
-        </button>
+          <ArrowLeft strokeWidth={1.5} className="h-4 w-4" aria-hidden="true" />
+        </Button>
       )}
       {canNext && (
-        <button
+        <Button
           aria-label="Next carousel item"
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 inline-flex items-center justify-center h-8 w-8 rounded-full bg-white text-black shadow-sm ring-1 ring-black/10 hover:bg-black/5 dark:bg-white/10 dark:text-white dark:ring-white/20 dark:hover:bg-white/20"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+          variant="outline"
+          color="secondary"
+          size="sm"
+          uniform
+          pill
           onClick={() => emblaApi && emblaApi.scrollNext()}
-          type="button"
         >
-          <ArrowRight
-            strokeWidth={1.5}
-            className="h-4.5 w-4.5"
-            aria-hidden="true"
-          />
-        </button>
+          <ArrowRight strokeWidth={1.5} className="h-4 w-4" aria-hidden="true" />
+        </Button>
       )}
     </div>
   );
 }
 
-export default {ClassName};
+export default function {ClassName}() {
+  return (
+    <AppsSDKUIProvider>
+      <{ClassName}Inner />
+    </AppsSDKUIProvider>
+  );
+}

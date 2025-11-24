@@ -121,129 +121,108 @@ def create_widget(name: str, auth_type: str = None, scopes: list = None, templat
                 dest_dir = widget_dir / item.name
                 shutil.copytree(item, dest_dir, dirs_exist_ok=True)
 
-    # Install additional dependencies for templates
-    if template in ["list", "carousel", "albums"]:
-        console.print(f"\n[green][OK] Widget '{name}' created from '{template}' template![/green]")
+    # Install dependencies for templates (Apps SDK UI + Tailwind + template extras)
+    console.print(f"\n[green][OK] Widget '{name}' created from '{template_name}' template![/green]")
 
-        dep_name = {"list": "Tailwind CSS", "carousel": "Carousel", "albums": "Albums"}.get(template, "Template")
-        console.print(f"\n[cyan]Installing {dep_name} dependencies...[/cyan]")
+    dep_name = {"list": "List", "carousel": "Carousel", "albums": "Albums"}.get(template_name, "Widget")
+    console.print(f"\n[cyan]Installing {dep_name} dependencies...[/cyan]")
 
-        # Check if package.json exists
-        package_json_path = Path("package.json")
-        if package_json_path.exists():
-            try:
-                # Read current package.json
-                with open(package_json_path, 'r') as f:
-                    package_data = json.load(f)
+    # Check if package.json exists
+    package_json_path = Path("package.json")
+    if package_json_path.exists():
+        try:
+            # Read current package.json
+            with open(package_json_path, 'r') as f:
+                package_data = json.load(f)
 
-                # Add Tailwind dependencies to devDependencies
-                if 'devDependencies' not in package_data:
-                    package_data['devDependencies'] = {}
-                if 'dependencies' not in package_data:
-                    package_data['dependencies'] = {}
+            if 'devDependencies' not in package_data:
+                package_data['devDependencies'] = {}
+            if 'dependencies' not in package_data:
+                package_data['dependencies'] = {}
 
-                # Template-specific dependencies
-                if template == "list":
-                    # Dev dependencies for list
-                    template_dev_deps = {
-                        "@tailwindcss/vite": "^4.1.11",
-                        "autoprefixer": "^10.4.21",
-                        "postcss": "^8.5.6",
-                        "tailwindcss": "^4.1.11"
-                    }
-                    # Runtime dependencies for list
-                    template_deps = {
-                        "lucide-react": "^0.552.0"
-                    }
-                elif template == "carousel":
-                    # Dev dependencies for carousel
-                    template_dev_deps = {
-                        "@tailwindcss/vite": "^4.1.11",
-                        "autoprefixer": "^10.4.21",
-                        "postcss": "^8.5.6",
-                        "tailwindcss": "^4.1.11"
-                    }
-                    # Runtime dependencies for carousel
-                    template_deps = {
-                        "lucide-react": "^0.552.0",
-                        "embla-carousel-react": "^8.6.0"
-                    }
-                elif template == "albums":
-                    # Dev dependencies for albums
-                    template_dev_deps = {
-                        "@tailwindcss/vite": "^4.1.11",
-                        "autoprefixer": "^10.4.21",
-                        "postcss": "^8.5.6",
-                        "tailwindcss": "^4.1.11"
-                    }
-                    # Runtime dependencies for albums
-                    template_deps = {
-                        "lucide-react": "^0.552.0",
-                        "embla-carousel-react": "^8.6.0"
-                    }
-                else:
-                    template_dev_deps = {}
-                    template_deps = {}
+            # Base deps shared across templates (Apps SDK UI + Tailwind 4)
+            template_dev_deps = {
+                "@tailwindcss/vite": "^4.1.11",
+                "autoprefixer": "^10.4.21",
+                "postcss": "^8.5.6",
+                "tailwindcss": "^4.1.11"
+            }
+            template_deps = {
+                "@openai/apps-sdk-ui": "^0.1.0"
+            }
 
-                # Check if dependencies already exist
-                deps_to_install = []
-                for dep, version in template_dev_deps.items():
-                    if dep not in package_data['devDependencies']:
-                        package_data['devDependencies'][dep] = version
-                        deps_to_install.append(dep)
+            # Template-specific runtime deps
+            if template_name == "list":
+                template_deps.update({
+                    "lucide-react": "^0.552.0"
+                })
+            elif template_name == "carousel":
+                template_deps.update({
+                    "lucide-react": "^0.552.0",
+                    "embla-carousel-react": "^8.6.0"
+                })
+            elif template_name == "albums":
+                template_deps.update({
+                    "lucide-react": "^0.552.0",
+                    "embla-carousel-react": "^8.6.0"
+                })
 
-                for dep, version in template_deps.items():
-                    if dep not in package_data['dependencies']:
-                        package_data['dependencies'][dep] = version
-                        deps_to_install.append(dep)
+            # Check if dependencies already exist
+            deps_to_install = []
+            for dep, version in template_dev_deps.items():
+                if dep not in package_data['devDependencies']:
+                    package_data['devDependencies'][dep] = version
+                    deps_to_install.append(dep)
 
-                # Write updated package.json
-                if deps_to_install:
-                    with open(package_json_path, 'w') as f:
-                        json.dump(package_data, f, indent=2)
+            for dep, version in template_deps.items():
+                if dep not in package_data['dependencies']:
+                    package_data['dependencies'][dep] = version
+                    deps_to_install.append(dep)
 
-                    dep_type = "template" if template else "Tailwind"
-                    console.print(f"[cyan]Added {len(deps_to_install)} {dep_type} dependencies to package.json[/cyan]")
+            # Write updated package.json
+            if deps_to_install:
+                with open(package_json_path, 'w') as f:
+                    json.dump(package_data, f, indent=2)
 
-                    # Run npm install
-                    console.print("[cyan]Running npm install...[/cyan]")
-                    try:
-                        result = subprocess.run(
-                            ["npm", "install"],
-                            capture_output=True,
-                            text=True,
-                            check=True
-                        )
-                        success_msg = f"{dep_name} dependencies" if template in ["list", "carousel", "albums"] else "Dependencies"
-                        console.print(f"[green]✓ {success_msg} installed[/green]")
-                    except subprocess.CalledProcessError as e:
-                        console.print("[yellow]⚠ npm install failed. Run 'npm install' manually[/yellow]")
-                    except FileNotFoundError:
-                        console.print("[yellow]⚠ npm not found. Run 'npm install' manually[/yellow]")
-                else:
-                    success_msg = f"{dep_name} dependencies" if template in ["list", "carousel", "albums"] else "Dependencies"
-                    console.print(f"[green]✓ {success_msg} already installed[/green]")
+                console.print(f"[cyan]Added {len(deps_to_install)} dependencies to package.json[/cyan]")
 
-            except Exception as e:
-                console.print(f"[yellow]⚠ Could not update package.json: {e}[/yellow]")
-                if template in ["carousel", "albums"]:
-                    console.print(f"[yellow]Please install {template} dependencies manually:[/yellow]")
-                    console.print("[dim]  npm install embla-carousel-react lucide-react[/dim]")
-                    console.print("[dim]  npm install -D @tailwindcss/vite tailwindcss autoprefixer postcss[/dim]")
-                else:
-                    console.print("[yellow]Please install Tailwind CSS manually:[/yellow]")
-                    console.print("[dim]  npm install -D @tailwindcss/vite tailwindcss autoprefixer postcss[/dim]")
-        else:
-            console.print("[yellow]⚠ package.json not found[/yellow]")
-            if template in ["carousel", "albums"]:
-                console.print(f"[yellow]Please install {template} dependencies manually:[/yellow]")
-                console.print("[dim]  npm install embla-carousel-react lucide-react[/dim]")
-                console.print("[dim]  npm install -D @tailwindcss/vite tailwindcss autoprefixer postcss[/dim]")
+                # Run npm install
+                console.print("[cyan]Running npm install...[/cyan]")
+                try:
+                    result = subprocess.run(
+                        ["npm", "install"],
+                        capture_output=True,
+                        text=True,
+                        check=True
+                    )
+                    console.print(f"[green]✓ {dep_name} dependencies installed[/green]")
+                except subprocess.CalledProcessError as e:
+                    console.print("[yellow]⚠ npm install failed. Run 'npm install' manually[/yellow]")
+                except FileNotFoundError:
+                    console.print("[yellow]⚠ npm not found. Run 'npm install' manually[/yellow]")
             else:
-                console.print("[yellow]Please install Tailwind CSS manually:[/yellow]")
-                console.print("[dim]  npm install -D @tailwindcss/vite tailwindcss autoprefixer postcss[/dim]")
+                console.print(f"[green]✓ {dep_name} dependencies already installed[/green]")
+
+        except Exception as e:
+            console.print(f"[yellow]⚠ Could not update package.json: {e}[/yellow]")
+            console.print("[yellow]Please install dependencies manually:[/yellow]")
+            manual_deps = ["@openai/apps-sdk-ui"]
+            if template_name in ["carousel", "albums"]:
+                manual_deps.extend(["embla-carousel-react", "lucide-react"])
+            elif template_name == "list":
+                manual_deps.append("lucide-react")
+            console.print(f"[dim]  npm install {' '.join(manual_deps)}[/dim]")
+            console.print("[dim]  npm install -D @tailwindcss/vite tailwindcss autoprefixer postcss[/dim]")
     else:
-        console.print(f"\n[green][OK] Widget '{name}' created![/green]")
+        console.print("[yellow]⚠ package.json not found[/yellow]")
+        manual_deps = ["@openai/apps-sdk-ui"]
+        if template_name in ["carousel", "albums"]:
+            manual_deps.extend(["embla-carousel-react", "lucide-react"])
+        elif template_name == "list":
+            manual_deps.append("lucide-react")
+        console.print("[yellow]Please install dependencies manually:[/yellow]")
+        console.print(f"[dim]  npm install {' '.join(manual_deps)}[/dim]")
+        console.print("[dim]  npm install -D @tailwindcss/vite tailwindcss autoprefixer postcss[/dim]")
 
     console.print("\n[green][OK] Widget created successfully![/green]")
     console.print("\n[cyan]Created files:[/cyan]")
