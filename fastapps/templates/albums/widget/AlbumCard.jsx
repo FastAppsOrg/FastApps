@@ -14,7 +14,8 @@ function AlbumCard({ album, onSelect }) {
       type="button"
       variant="ghost"
       color="secondary"
-      className="group relative cursor-pointer flex-shrink-0 w-[272px] bg-transparent text-left rounded-3xl p-0 focus-visible:ring-2 focus-visible:ring-default"
+      className="group relative cursor-pointer flex-shrink-0 w-[272px] bg-transparent text-left rounded-3xl p-0 focus-visible:ring-2 focus-visible:ring-default flex-col items-start"
+      style={{ height: "auto" }}
       onClick={() => onSelect?.(album)}
       aria-label={`Open ${title}`}
       block

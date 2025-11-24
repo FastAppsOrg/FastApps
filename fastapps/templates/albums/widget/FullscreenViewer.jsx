@@ -2,11 +2,9 @@ import React from "react";
 import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { Image } from "@openai/apps-sdk-ui/components/Image";
 import { ArrowLeft } from "lucide-react";
-import { useMaxHeight } from "fastapps";
 import FilmStrip from "./FilmStrip";
 
 export default function FullscreenViewer({ album, onBack }) {
-  const maxHeight = useMaxHeight() ?? undefined;
   const [index, setIndex] = React.useState(0);
   const photos = Array.isArray(album?.photos) ? album.photos : [];
 
@@ -27,13 +25,7 @@ export default function FullscreenViewer({ album, onBack }) {
   const photo = photos[index];
 
   return (
-    <div
-      className="relative w-full h-full bg-surface"
-      style={{
-        maxHeight,
-      }}
-    >
-      {/* Back button */}
+    <div className="relative w-full bg-surface">
       {onBack && (
         <Button
           aria-label="Back to albums"
@@ -49,26 +41,23 @@ export default function FullscreenViewer({ album, onBack }) {
         </Button>
       )}
 
-      <div className="absolute inset-0 flex flex-row overflow-hidden">
-        {/* Film strip */}
-        <div className="hidden md:block absolute pointer-events-none z-10 left-0 top-0 bottom-0 w-40">
+      <div className="flex flex-col md:flex-row items-stretch gap-6 md:gap-10 px-4 sm:px-6 md:px-10 py-8 md:py-12">
+        <div className="hidden md:flex w-40 shrink-0">
           <FilmStrip
             album={{ ...album, photos }}
             selectedIndex={index}
             onSelect={setIndex}
           />
         </div>
-        {/* Main photo */}
-        <div className="flex-1 min-w-0 px-40 py-10 relative flex items-center justify-center">
-          <div className="relative w-full h-full">
-            {photo ? (
-              <Image
-                src={photo.url}
-                alt={photo.title || album.title || "Photo"}
-                className="absolute inset-0 m-auto rounded-3xl shadow-sm border border-default max-w-full max-h-full object-contain"
-              />
-            ) : null}
-          </div>
+
+        <div className="flex-1 min-w-0 flex items-center justify-center">
+          {photo ? (
+            <Image
+              src={photo.url}
+              alt={photo.title || album.title || "Photo"}
+              className="w-full max-h-[70vh] rounded-3xl shadow-sm border border-default object-contain"
+            />
+          ) : null}
         </div>
       </div>
     </div>

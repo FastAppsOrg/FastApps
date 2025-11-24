@@ -2,7 +2,7 @@ import React from "react";
 import { AppsSDKUIProvider } from "@openai/apps-sdk-ui/components/AppsSDKUIProvider";
 import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { EmptyMessage } from "@openai/apps-sdk-ui/components/EmptyMessage";
-import { useWidgetProps, useMaxHeight, useOpenAiGlobal } from "fastapps";
+import { useWidgetProps, useOpenAiGlobal, useMaxHeight } from "fastapps";
 import useEmblaCarousel from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import FullscreenViewer from "./FullscreenViewer";
@@ -50,7 +50,7 @@ function AlbumsCarousel({ albums, onSelect }) {
   }
 
   return (
-    <div className="antialiased relative w-full text-default py-5 select-none">
+    <div className="antialiased relative w-full text-default py-5 select-none min-h-[260px]">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex gap-5 items-stretch">
           {normalizedAlbums.map((album, i) => (
@@ -146,7 +146,8 @@ function {ClassName}Inner() {
         (isFullscreen ? "bg-surface" : "bg-transparent")
       }
       style={{
-        overflow: !isFullscreen ? "auto" : undefined,
+        maxHeight: isFullscreen ? undefined : maxHeight,
+        overflow: isFullscreen ? "visible" : "auto",
       }}
     >
       {!isFullscreen && (
