@@ -3,12 +3,13 @@ import { AppsSDKUIProvider } from "@openai/apps-sdk-ui/components/AppsSDKUIProvi
 import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { EmptyMessage } from "@openai/apps-sdk-ui/components/EmptyMessage";
 import { Image } from "@openai/apps-sdk-ui/components/Image";
-import { useWidgetProps } from "fastapps";
+import { useWidgetData } from "fastapps";
 import { PlusCircle, Star } from "lucide-react";
 import "./index.css";
 
 function {ClassName}Inner() {
-  const { title, description, items } = useWidgetProps() || {};
+  const data = useWidgetData() || {};
+  const { title, description, items } = data;
   const normalizedItems = Array.isArray(items) ? items.slice(0, 7) : [];
   const hasItems = normalizedItems.length > 0;
 

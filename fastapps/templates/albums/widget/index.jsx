@@ -2,7 +2,7 @@ import React from "react";
 import { AppsSDKUIProvider } from "@openai/apps-sdk-ui/components/AppsSDKUIProvider";
 import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { EmptyMessage } from "@openai/apps-sdk-ui/components/EmptyMessage";
-import { useWidgetProps, useOpenAiGlobal, useMaxHeight } from "fastapps";
+import { useWidgetData, useHostContextCompat } from "fastapps";
 import useEmblaCarousel from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import FullscreenViewer from "./FullscreenViewer";
@@ -96,7 +96,8 @@ function AlbumsCarousel({ albums, onSelect }) {
 }
 
 function {ClassName}Inner() {
-  const { albums } = useWidgetProps() || {};
+  const data = useWidgetData() || {};
+  const { albums } = data;
   const normalizedAlbums = Array.isArray(albums)
     ? albums
         .filter((album) => album && album.cover)
@@ -106,10 +107,10 @@ function {ClassName}Inner() {
         }))
     : [];
   const limitedAlbums = normalizedAlbums.slice(0, 8);
-  const displayMode = useOpenAiGlobal("displayMode");
-  const isFullscreen = displayMode === "fullscreen";
+  const hostContext = useHostContextCompat();
+  const isFullscreen = hostContext.displayMode === "fullscreen";
   const [selectedAlbum, setSelectedAlbum] = React.useState(null);
-  const maxHeight = useMaxHeight() ?? undefined;
+  const maxHeight = hostContext.maxHeight ?? undefined;
 
   React.useEffect(() => {
     if (!selectedAlbum) {
@@ -118,25 +119,20 @@ function {ClassName}Inner() {
     const stillExists = limitedAlbums.some((album) => album.id === selectedAlbum.id);
     if (!stillExists) {
       setSelectedAlbum(null);
-      if (window?.openai?.requestDisplayMode) {
-        window.openai.requestDisplayMode({ mode: "inline" });
-      }
+      // Graceful no-op if not supported
+      window?.openai?.requestDisplayMode?.({ mode: "inline" });
     }
   }, [limitedAlbums, selectedAlbum]);
 
   const handleSelectAlbum = (album) => {
     if (!album) return;
     setSelectedAlbum(album);
-    if (window?.openai?.requestDisplayMode) {
-      window.openai.requestDisplayMode({ mode: "fullscreen" });
-    }
+    window?.openai?.requestDisplayMode?.({ mode: "fullscreen" });
   };
 
   const handleBackToAlbums = () => {
     setSelectedAlbum(null);
-    if (window?.openai?.requestDisplayMode) {
-      window.openai.requestDisplayMode({ mode: "inline" });
-    }
+    window?.openai?.requestDisplayMode?.({ mode: "inline" });
   };
 
   return (
