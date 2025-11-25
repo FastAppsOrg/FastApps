@@ -32,6 +32,7 @@ from fastapps import (
     WidgetBuildResult,
     OpenAIAppsAdapter,
     MCPAppsAdapter,
+    AutoProtocolAdapter,
 )
 import uvicorn
 
@@ -86,7 +87,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--protocol",
-    choices=["openai-apps", "mcp-apps"],
+    choices=["openai-apps", "mcp-apps", "auto"],
     default="openai-apps",
     help="UI protocol adapter: OpenAI Apps SDK (default) or MCP Apps extension"
 )
@@ -125,6 +126,8 @@ csp_config = load_csp_config()
 def select_adapter(protocol: str):
     if protocol == "mcp-apps":
         return MCPAppsAdapter()
+    if protocol == "auto":
+        return AutoProtocolAdapter()
     return OpenAIAppsAdapter()
 
 # Create MCP server with CSP configuration

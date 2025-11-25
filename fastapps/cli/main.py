@@ -115,7 +115,7 @@ def create(widget_name, auth, public, optional_auth, scopes, template):
 )
 @click.option(
     "--protocol",
-    type=click.Choice(['openai-apps', 'mcp-apps'], case_sensitive=False),
+    type=click.Choice(['openai-apps', 'mcp-apps', 'auto'], case_sensitive=False),
     default='openai-apps',
     help="UI protocol adapter: OpenAI Apps SDK (default) or MCP Apps extension",
 )
