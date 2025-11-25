@@ -1,0 +1,169 @@
+/**
+ * Minimal MCP Apps (SEP-1865 draft) postMessage client for UI iframes.
+ *
+ * The UI (guest) sends JSON-RPC 2.0 messages to its parent host.
+ * This client handles ui/initialize handshake and generic request/notification flows.
+ */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+export type JsonRpcId = number;
+
+export type JsonRpcRequest = {
+  jsonrpc: "2.0";
+  id: JsonRpcId;
+  method: string;
+  params?: any;
+};
+
+export type JsonRpcResponse =
+  | {
+      jsonrpc: "2.0";
+      id: JsonRpcId;
+      result: any;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: JsonRpcId;
+      error: { code: number; message: string; data?: any };
+    };
+
+export type JsonRpcNotification = {
+  jsonrpc: "2.0";
+  method: string;
+  params?: any;
+};
+
+export type HostContext = {
+  toolInfo?: {
+    id?: string | number;
+    tool?: any;
+  };
+  theme?: "light" | "dark" | "system";
+  displayMode?: "inline" | "fullscreen" | "pip" | "carousel";
+  availableDisplayModes?: string[];
+  viewport?: {
+    width: number;
+    height: number;
+    maxHeight?: number;
+    maxWidth?: number;
+  };
+  locale?: string;
+  timeZone?: string;
+  userAgent?: string;
+  platform?: "web" | "desktop" | "mobile";
+  deviceCapabilities?: { touch?: boolean; hover?: boolean };
+  safeAreaInsets?: { top: number; right: number; bottom: number; left: number };
+};
+
+export type UiInitializeResult = {
+  protocolVersion: string;
+  hostCapabilities?: any;
+  hostInfo?: { name: string; version: string };
+  hostContext?: HostContext;
+};
+
+type Pending = {
+  resolve: (value: any) => void;
+  reject: (error: Error) => void;
+};
+
+export class McpAppsClient {
+  private target: Window;
+  private nextId: number;
+  private pending: Map<number, Pending>;
+  private notificationHandlers: Map<string, ((params: any) => void)[]>;
+  private initialized = false;
+
+  constructor(targetWindow?: Window) {
+    this.target = targetWindow ?? window.parent;
+    this.nextId = 1;
+    this.pending = new Map();
+    this.notificationHandlers = new Map();
+    this.handleMessage = this.handleMessage.bind(this);
+  }
+
+  connect() {
+    window.addEventListener("message", this.handleMessage);
+  }
+
+  disconnect() {
+    window.removeEventListener("message", this.handleMessage);
+    this.pending.clear();
+    this.notificationHandlers.clear();
+  }
+
+  async initialize(): Promise<UiInitializeResult> {
+    const result = await this.sendRequest("ui/initialize", {
+      capabilities: {},
+      clientInfo: { name: "fastapps-ui", version: "1.0.0" },
+      protocolVersion: "2025-06-18",
+    });
+    this.initialized = true;
+    return result as UiInitializeResult;
+  }
+
+  async sendRequest(method: string, params?: any): Promise<any> {
+    const id = this.nextId++;
+    const message: JsonRpcRequest = {
+      jsonrpc: "2.0",
+      id,
+      method,
+      params,
+    };
+
+    const promise = new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      try {
+        this.target.postMessage(message, "*");
+      } catch (e: any) {
+        this.pending.delete(id);
+        reject(e);
+      }
+    });
+
+    return promise;
+  }
+
+  sendNotification(method: string, params?: any) {
+    const message: JsonRpcNotification = {
+      jsonrpc: "2.0",
+      method,
+      params,
+    };
+    this.target.postMessage(message, "*");
+  }
+
+  onNotification(method: string, handler: (params: any) => void) {
+    const handlers = this.notificationHandlers.get(method) ?? [];
+    handlers.push(handler);
+    this.notificationHandlers.set(method, handlers);
+  }
+
+  private handleMessage(event: MessageEvent) {
+    const data = event.data as JsonRpcResponse | JsonRpcNotification;
+    if (!data || data.jsonrpc !== "2.0") {
+      return;
+    }
+
+    // Response
+    if ("id" in data && (data as any).id !== undefined) {
+      const pending = this.pending.get((data as any).id);
+      if (!pending) return;
+      this.pending.delete((data as any).id);
+
+      if ("result" in data) {
+        pending.resolve((data as any).result);
+      } else if ("error" in data) {
+        pending.reject(new Error((data as any).error?.message ?? "Unknown error"));
+      }
+      return;
+    }
+
+    // Notification
+    if ("method" in data) {
+      const handlers = this.notificationHandlers.get((data as any).method) ?? [];
+      handlers.forEach((fn) => fn((data as any).params));
+    }
+  }
+}

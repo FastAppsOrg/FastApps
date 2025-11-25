@@ -9,6 +9,8 @@ export { useWidgetProps } from './hooks/useWidgetProps';
 export { useWidgetState } from './hooks/useWidgetState';
 export { useDisplayMode } from './hooks/useDisplayMode';
 export { useMaxHeight } from './hooks/useMaxHeight';
+export { useMcpAppsHostContext } from './hooks/useMcpAppsHostContext';
+export { McpAppsClient } from './mcp/appsClient';
 
 export type {
   OpenAiGlobals,
@@ -22,3 +24,4 @@ export type {
   CallToolResponse,
 } from './hooks/types';
 
+export type { HostContext, UiInitializeResult } from './mcp/appsClient';
