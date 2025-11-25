@@ -10,6 +10,10 @@ import { McpAppsClient } from "../mcp/appsClient";
  * - requestDisplayMode: OpenAI requestDisplayMode (no MCP equivalent yet)
  */
 export function useHostActions(targetWindow?: Window) {
+  const protocolHint =
+    typeof window !== "undefined"
+      ? (window as any).__FASTAPPS_PROTOCOL
+      : undefined;
   const clientRef = useCallback(() => new McpAppsClient(targetWindow), [targetWindow]);
 
   const ensureMcpClient = useCallback(() => {
@@ -23,7 +27,7 @@ export function useHostActions(targetWindow?: Window) {
 
   const openLink = useCallback(
     async (href: string) => {
-      if (window?.openai?.openExternal) {
+      if (protocolHint !== "mcp-apps" && window?.openai?.openExternal) {
         return window.openai.openExternal({ href });
       }
       const client = ensureMcpClient();
@@ -34,7 +38,7 @@ export function useHostActions(targetWindow?: Window) {
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (window?.openai?.sendFollowUpMessage) {
+      if (protocolHint !== "mcp-apps" && window?.openai?.sendFollowUpMessage) {
         return window.openai.sendFollowUpMessage({ prompt: text });
       }
       const client = ensureMcpClient();
@@ -48,7 +52,7 @@ export function useHostActions(targetWindow?: Window) {
 
   const callTool = useCallback(
     async (name: string, args: Record<string, unknown>) => {
-      if (window?.openai?.callTool) {
+      if (protocolHint !== "mcp-apps" && window?.openai?.callTool) {
         return window.openai.callTool(name, args);
       }
       const client = ensureMcpClient();
@@ -59,7 +63,7 @@ export function useHostActions(targetWindow?: Window) {
 
   const requestDisplayMode = useCallback(
     async (mode: "inline" | "fullscreen" | "pip") => {
-      if (window?.openai?.requestDisplayMode) {
+      if (protocolHint !== "mcp-apps" && window?.openai?.requestDisplayMode) {
         return window.openai.requestDisplayMode({ mode });
       }
       // No MCP Apps equivalent defined yet; return a resolved promise.

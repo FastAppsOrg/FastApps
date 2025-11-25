@@ -15,15 +15,49 @@ export function useHostContextCompat() {
   const openaiUserAgent = useOpenAiGlobal("userAgent");
 
   const { hostContext } = useMcpAppsHostContext();
+  const protocolHint =
+    typeof window !== "undefined"
+      ? (window as any).__FASTAPPS_PROTOCOL
+      : undefined;
 
   return useMemo(
     () => ({
-      theme: openaiTheme ?? hostContext?.theme ?? null,
-      displayMode: openaiDisplayMode ?? hostContext?.displayMode ?? null,
-      maxHeight: openaiMaxHeight ?? hostContext?.viewport?.maxHeight ?? null,
-      safeArea: openaiSafeArea ?? hostContext?.safeAreaInsets ?? null,
-      locale: openaiLocale ?? hostContext?.locale ?? null,
-      userAgent: openaiUserAgent ?? hostContext?.userAgent ?? null,
+      theme:
+        protocolHint === "openai-apps"
+          ? openaiTheme ?? null
+          : protocolHint === "mcp-apps"
+            ? hostContext?.theme ?? null
+            : openaiTheme ?? hostContext?.theme ?? null,
+      displayMode:
+        protocolHint === "openai-apps"
+          ? openaiDisplayMode ?? null
+          : protocolHint === "mcp-apps"
+            ? hostContext?.displayMode ?? null
+            : openaiDisplayMode ?? hostContext?.displayMode ?? null,
+      maxHeight:
+        protocolHint === "openai-apps"
+          ? openaiMaxHeight ?? null
+          : protocolHint === "mcp-apps"
+            ? hostContext?.viewport?.maxHeight ?? null
+            : openaiMaxHeight ?? hostContext?.viewport?.maxHeight ?? null,
+      safeArea:
+        protocolHint === "openai-apps"
+          ? openaiSafeArea ?? null
+          : protocolHint === "mcp-apps"
+            ? hostContext?.safeAreaInsets ?? null
+            : openaiSafeArea ?? hostContext?.safeAreaInsets ?? null,
+      locale:
+        protocolHint === "openai-apps"
+          ? openaiLocale ?? null
+          : protocolHint === "mcp-apps"
+            ? hostContext?.locale ?? null
+            : openaiLocale ?? hostContext?.locale ?? null,
+      userAgent:
+        protocolHint === "openai-apps"
+          ? openaiUserAgent ?? null
+          : protocolHint === "mcp-apps"
+            ? hostContext?.userAgent ?? null
+            : openaiUserAgent ?? hostContext?.userAgent ?? null,
       // raw accessors
       _openai: {
         theme: openaiTheme,
@@ -43,6 +77,7 @@ export function useHostContextCompat() {
       openaiLocale,
       openaiUserAgent,
       hostContext,
+      protocolHint,
     ]
   );
 }

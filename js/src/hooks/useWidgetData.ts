@@ -17,6 +17,11 @@ type Options<T> = {
  * - Otherwise, subscribe to MCP Apps ui/notifications/tool-result and return structuredContent.
  */
 export function useWidgetData<T = any>(options?: Options<T>): T | null {
+  const protocolHint =
+    typeof window !== "undefined"
+      ? (window as any).__FASTAPPS_PROTOCOL
+      : undefined;
+
   // OpenAI Apps path
   const openaiProps = useWidgetProps<T>();
 
@@ -26,6 +31,13 @@ export function useWidgetData<T = any>(options?: Options<T>): T | null {
 
   // Choose OpenAI first if available, else MCP, else default
   return useMemo(() => {
+    if (protocolHint === "openai-apps") {
+      return openaiProps ?? null;
+    }
+    if (protocolHint === "mcp-apps") {
+      return (mcpData as T) ?? null;
+    }
+
     if (openaiProps != null) return openaiProps;
     if (mcpData != null) return mcpData as T;
 

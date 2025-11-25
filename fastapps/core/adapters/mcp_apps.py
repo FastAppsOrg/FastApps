@@ -8,6 +8,7 @@ from mcp import types
 
 from fastapps.core.protocol import ProtocolAdapter
 from fastapps.core.utils import get_cli_version
+from fastapps.core.adapters.utils import _inject_protocol_hint
 from fastapps.core.widget import BaseWidget, ClientContext, UserContext
 
 if TYPE_CHECKING:
@@ -106,11 +107,13 @@ class MCPAppsAdapter(ProtocolAdapter):
                     )
                 )
 
+            html = _inject_protocol_hint(widget.build_result.html, "mcp-apps")
+
             contents = [
                 types.TextResourceContents(
                     uri=widget.template_uri,
                     mimeType="text/html+mcp",
-                    text=widget.build_result.html,
+                    text=html,
                     _meta=self._build_ui_meta(widget),
                 )
             ]

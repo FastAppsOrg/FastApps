@@ -9,6 +9,7 @@ from mcp import types
 from fastapps.core.protocol import ProtocolAdapter
 from fastapps.core.adapters.openai_apps import OpenAIAppsAdapter
 from fastapps.core.adapters.mcp_apps import MCPAppsAdapter
+from fastapps.core.adapters.utils import _inject_protocol_hint  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from fastapps.core.server import WidgetMCPServer
