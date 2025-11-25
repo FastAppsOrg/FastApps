@@ -75,7 +75,9 @@ class AutoProtocolAdapter(ProtocolAdapter):
             ui_ext = extensions.get("io.modelcontextprotocol/ui")
             mime_types = ui_ext.get("mimeTypes", []) if isinstance(ui_ext, dict) else []
             if any(mt.lower() == "text/html+mcp" for mt in mime_types):
+                print("[AutoAdapter] Selected MCP Apps based on client capabilities")
                 return self.mcp_adapter
         except Exception:
             pass
+        print("[AutoAdapter] Selected OpenAI Apps (default)")
         return self.openai_adapter
