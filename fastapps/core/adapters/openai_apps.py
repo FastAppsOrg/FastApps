@@ -1,0 +1,306 @@
+"""Default adapter for OpenAI Apps SDK-compatible behavior."""
+
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+from mcp import types
+
+from fastapps.core.protocol import ProtocolAdapter
+from fastapps.core.utils import get_cli_version
+from fastapps.core.widget import BaseWidget, ClientContext, UserContext
+
+if TYPE_CHECKING:
+    from fastapps.core.server import WidgetMCPServer
+
+
+class OpenAIAppsAdapter(ProtocolAdapter):
+    """Implements the legacy/default OpenAI Apps SDK wiring."""
+
+    def register_handlers(self, widget_server: "WidgetMCPServer") -> None:
+        """Attach handlers on the given WidgetMCPServer."""
+        server = widget_server.mcp._mcp_server
+
+        original_initialize = server.request_handlers.get(types.InitializeRequest)
+
+        async def initialize_handler(
+            req: types.InitializeRequest,
+        ) -> types.ServerResult:
+            meta = req.params._meta if hasattr(req.params, "_meta") else {}
+            requested_locale = meta.get("openai/locale") or meta.get("webplus/i18n")
+
+            if requested_locale:
+                widget_server.client_locale = requested_locale
+                for widget in widget_server.widgets_by_id.values():
+                    resolved = widget.negotiate_locale(requested_locale)
+                    widget.resolved_locale = resolved
+
+            if original_initialize:
+                return await original_initialize(req)
+
+            return types.ServerResult(
+                types.InitializeResult(
+                    protocolVersion=req.params.protocolVersion,
+                    capabilities=types.ServerCapabilities(),
+                    serverInfo=types.Implementation(
+                        name="FastApps", version=get_cli_version()
+                    ),
+                )
+            )
+
+        server.request_handlers[types.InitializeRequest] = initialize_handler
+
+        @server.list_tools()
+        async def list_tools_handler() -> List[types.Tool]:
+            tools_list = []
+            for w in widget_server.widgets_by_id.values():
+                tool_meta = w.get_tool_meta()
+
+                if "securitySchemes" not in tool_meta and widget_server.server_requires_auth:
+                    tool_meta["securitySchemes"] = [
+                        {"type": "oauth2", "scopes": widget_server.server_auth_scopes}
+                    ]
+
+                tools_list.append(
+                    types.Tool(
+                        name=w.identifier,
+                        title=w.title,
+                        description=w.description or w.title,
+                        inputSchema=w.get_input_schema(),
+                        _meta=tool_meta,
+                    )
+                )
+            return tools_list
+
+        @server.list_resources()
+        async def list_resources_handler() -> List[types.Resource]:
+            resources = []
+            for w in widget_server.widgets_by_id.values():
+                meta = w.get_resource_meta()
+                resource = types.Resource(
+                    name=w.title,
+                    title=w.title,
+                    uri=w.template_uri,
+                    description=f"{w.title} widget markup",
+                    mimeType="text/html+skybridge",
+                    _meta=meta,
+                )
+                resources.append(resource)
+            return resources
+
+        @server.list_resource_templates()
+        async def list_resource_templates_handler() -> List[types.ResourceTemplate]:
+            return [
+                types.ResourceTemplate(
+                    name=w.title,
+                    title=w.title,
+                    uriTemplate=w.template_uri,
+                    description=f"{w.title} widget markup",
+                    mimeType="text/html+skybridge",
+                    _meta=w.get_resource_meta(),
+                )
+                for w in widget_server.widgets_by_id.values()
+            ]
+
+        async def read_resource_handler(
+            req: types.ReadResourceRequest,
+        ) -> types.ServerResult:
+            widget = widget_server.widgets_by_uri.get(str(req.params.uri))
+            if not widget:
+                return types.ServerResult(
+                    types.ReadResourceResult(
+                        contents=[],
+                        _meta={"error": f"Unknown resource: {req.params.uri}"},
+                    )
+                )
+
+            contents = [
+                types.TextResourceContents(
+                    uri=widget.template_uri,
+                    mimeType="text/html+skybridge",
+                    text=widget.build_result.html,
+                    _meta=widget.get_resource_meta(),
+                )
+            ]
+            return types.ServerResult(types.ReadResourceResult(contents=contents))
+
+        async def call_tool_handler(req: types.CallToolRequest) -> types.ServerResult:
+            widget = widget_server.widgets_by_id.get(req.params.name)
+            if not widget:
+                return types.ServerResult(
+                    types.CallToolResult(
+                        content=[
+                            types.TextContent(
+                                type="text", text=f"Unknown tool: {req.params.name}"
+                            )
+                        ],
+                        isError=True,
+                    )
+                )
+
+            try:
+                access_token = None
+                if hasattr(req, "context") and hasattr(req.context, "access_token"):
+                    access_token = req.context.access_token
+                elif hasattr(req.params, "_meta"):
+                    meta_token = req.params._meta.get("access_token")
+                    if meta_token:
+                        access_token = meta_token
+
+                widget_requires_auth = getattr(widget, "_auth_required", None)
+
+                if widget_requires_auth is None and widget_server.server_requires_auth:
+                    widget_requires_auth = True
+
+                if widget_requires_auth is True and not access_token:
+                    return types.ServerResult(
+                        types.CallToolResult(
+                            content=[
+                                types.TextContent(
+                                    type="text",
+                                    text="Authentication required for this tool",
+                                )
+                            ],
+                            isError=True,
+                        )
+                    )
+
+                if (
+                    access_token
+                    and hasattr(widget, "_auth_scopes")
+                    and widget._auth_scopes
+                ):
+                    user_scopes = getattr(access_token, "scopes", [])
+                    missing_scopes = set(widget._auth_scopes) - set(user_scopes)
+
+                    if missing_scopes:
+                        return types.ServerResult(
+                            types.CallToolResult(
+                                content=[
+                                    types.TextContent(
+                                        type="text",
+                                        text=f"Missing required scopes: {', '.join(missing_scopes)}",
+                                    )
+                                ],
+                                isError=True,
+                            )
+                        )
+
+                arguments = req.params.arguments or {}
+                input_data = widget.input_schema.model_validate(arguments)
+
+                meta = req.params._meta if hasattr(req.params, "_meta") else {}
+
+                requested_locale = meta.get("openai/locale") or meta.get("webplus/i18n")
+                if requested_locale:
+                    widget.resolved_locale = widget.negotiate_locale(requested_locale)
+
+                context = ClientContext(meta)
+                user = UserContext(access_token)
+
+                result_data = await widget.execute(input_data, context, user)
+            except Exception as exc:
+                return types.ServerResult(
+                    types.CallToolResult(
+                        content=[
+                            types.TextContent(type="text", text=f"Error: {str(exc)}")
+                        ],
+                        isError=True,
+                    )
+                )
+
+            widget_resource = widget.get_embedded_resource()
+            meta: Dict[str, Any] = {
+                "openai.com/widget": widget_resource.model_dump(mode="json"),
+                "openai/outputTemplate": widget.template_uri,
+                "openai/toolInvocation/invoking": widget.invoking,
+                "openai/toolInvocation/invoked": widget.invoked,
+                "openai/widgetAccessible": widget.widget_accessible,
+                "openai/resultCanProduceWidget": True,
+            }
+
+            if widget.resolved_locale:
+                meta["openai/locale"] = widget.resolved_locale
+
+            return types.ServerResult(
+                types.CallToolResult(
+                    content=[types.TextContent(type="text", text=widget.invoked)],
+                    structuredContent=result_data,
+                    _meta=meta,
+                )
+            )
+
+        server.request_handlers[types.ReadResourceRequest] = read_resource_handler
+        server.request_handlers[types.CallToolRequest] = call_tool_handler
+
+        self._register_assets_proxy(widget_server)
+
+    def _register_assets_proxy(self, widget_server: "WidgetMCPServer") -> None:
+        """Proxy /assets requests to local asset server (same behavior as before)."""
+        app = widget_server.mcp._mcp_server.http_app
+        if app is None:
+            app = widget_server.mcp.http_app()
+
+        try:
+            from starlette.middleware.cors import CORSMiddleware
+
+            app.add_middleware(
+                CORSMiddleware,
+                allow_origins=["*"],
+                allow_methods=["*"],
+                allow_headers=["*"],
+                allow_credentials=False,
+            )
+        except Exception:
+            pass
+
+        try:
+            import httpx
+            from starlette.responses import Response
+            from starlette.routing import Route
+
+            async def proxy_assets(request):
+                path = request.path_params.get("path", "")
+                upstream_url = f"http://127.0.0.1:4444/{path}"
+
+                try:
+                    async with httpx.AsyncClient(timeout=30.0) as client:
+                        upstream_response = await client.get(upstream_url)
+
+                        allowed_headers = {
+                            "content-type",
+                            "cache-control",
+                            "etag",
+                            "last-modified",
+                            "content-length",
+                        }
+                        response_headers = {
+                            k: v
+                            for k, v in upstream_response.headers.items()
+                            if k.lower() in allowed_headers
+                        }
+
+                        if "content-type" not in response_headers:
+                            response_headers["content-type"] = "application/octet-stream"
+
+                        response_headers["access-control-allow-origin"] = "*"
+                        response_headers["access-control-allow-methods"] = "GET, OPTIONS"
+                        response_headers["access-control-allow-headers"] = "*"
+
+                        return Response(
+                            content=upstream_response.content,
+                            status_code=upstream_response.status_code,
+                            headers=response_headers,
+                        )
+                except httpx.RequestError:
+                    return Response(
+                        content=b"Asset server unavailable",
+                        status_code=502,
+                        headers={"content-type": "text/plain"},
+                    )
+
+            app.routes.append(Route("/assets/{path:path}", proxy_assets, methods=["GET"]))
+        except Exception as e:
+            # Log error but don't crash
+            print(f"Warning: Could not register /assets proxy route: {e}")
+            pass

@@ -4,6 +4,7 @@ from fastmcp import FastMCP
 from mcp import types
 
 from fastapps.core.utils import get_cli_version
+from .protocol import ProtocolAdapter
 
 from .widget import BaseWidget, ClientContext, UserContext
 
@@ -32,6 +33,7 @@ class WidgetMCPServer:
         name: str,
         widgets: List[BaseWidget],
         # OAuth 2.1 authentication parameters (optional)
+        adapter: Optional[ProtocolAdapter] = None,
         auth_issuer_url: Optional[str] = None,
         auth_resource_server_url: Optional[str] = None,
         auth_required_scopes: Optional[List[str]] = None,
@@ -47,6 +49,7 @@ class WidgetMCPServer:
         Args:
             name: Server name
             widgets: List of widget instances
+            adapter: Optional protocol adapter for UI variants (default: built-in OpenAI Apps behavior)
             auth_issuer_url: OAuth issuer URL (e.g., https://tenant.auth0.com)
             auth_resource_server_url: Your MCP server URL (e.g., https://example.com/mcp)
             auth_required_scopes: Required OAuth scopes (e.g., ["user", "read:data"])
@@ -89,6 +92,9 @@ class WidgetMCPServer:
         self.widgets_by_id = {w.identifier: w for w in widgets}
         self.widgets_by_uri = {w.template_uri: w for w in widgets}
         self.client_locale: Optional[str] = None
+
+        # Optional protocol adapter (e.g., MCP Apps); default behavior remains intact
+        self.adapter: Optional[ProtocolAdapter] = None
 
         # Store global CSP configuration
         self.global_resource_domains = global_resource_domains or []
@@ -139,7 +145,17 @@ class WidgetMCPServer:
             fastmcp_kwargs.update({"token_verifier": verifier, "auth": auth_settings})
         self.mcp = FastMCP(**fastmcp_kwargs)
 
-        self._register_handlers()
+        # Use adapter if provided; otherwise fall back to built-in OpenAI Apps behavior
+        if adapter:
+            if not isinstance(adapter, ProtocolAdapter):
+                raise TypeError("adapter must implement ProtocolAdapter")
+            self.adapter = adapter
+        else:
+            from .adapters.openai_apps import OpenAIAppsAdapter
+
+            self.adapter = OpenAIAppsAdapter()
+
+        self.adapter.register_handlers(self)
 
     def _configure_widget_csp(self, widgets: List[BaseWidget]):
         """
