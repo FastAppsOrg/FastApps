@@ -74,6 +74,10 @@ export class McpAppsClient {
   private pending: Map<number, Pending>;
   private notificationHandlers: Map<string, ((params: any) => void)[]>;
   private initialized = false;
+  private latestToolResult: any = null;
+  private latestToolInput: any = null;
+  private toolResultListeners: ((result: any) => void)[] = [];
+  private toolInputListeners: ((params: any) => void)[] = [];
 
   constructor(targetWindow?: Window) {
     this.target = targetWindow ?? window.parent;
@@ -140,6 +144,22 @@ export class McpAppsClient {
     this.notificationHandlers.set(method, handlers);
   }
 
+  onToolResult(handler: (result: any) => void) {
+    this.toolResultListeners.push(handler);
+  }
+
+  onToolInput(handler: (params: any) => void) {
+    this.toolInputListeners.push(handler);
+  }
+
+  getLatestToolResult<T = any>(): T | null {
+    return this.latestToolResult as T | null;
+  }
+
+  getLatestToolInput<T = any>(): T | null {
+    return this.latestToolInput as T | null;
+  }
+
   private handleMessage(event: MessageEvent) {
     const data = event.data as JsonRpcResponse | JsonRpcNotification;
     if (!data || data.jsonrpc !== "2.0") {
@@ -162,8 +182,18 @@ export class McpAppsClient {
 
     // Notification
     if ("method" in data) {
-      const handlers = this.notificationHandlers.get((data as any).method) ?? [];
+      const method = (data as any).method as string;
+      const handlers = this.notificationHandlers.get(method) ?? [];
       handlers.forEach((fn) => fn((data as any).params));
+
+      // Special-case tool notifications per SEP-1865
+      if (method === "ui/notifications/tool-result") {
+        this.latestToolResult = (data as any).params ?? null;
+        this.toolResultListeners.forEach((fn) => fn(this.latestToolResult));
+      } else if (method === "ui/notifications/tool-input") {
+        this.latestToolInput = (data as any).params ?? null;
+        this.toolInputListeners.forEach((fn) => fn(this.latestToolInput));
+      }
     }
   }
 }

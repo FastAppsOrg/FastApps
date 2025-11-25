@@ -10,6 +10,8 @@ export { useWidgetState } from './hooks/useWidgetState';
 export { useDisplayMode } from './hooks/useDisplayMode';
 export { useMaxHeight } from './hooks/useMaxHeight';
 export { useMcpAppsHostContext } from './hooks/useMcpAppsHostContext';
+export { useMcpAppsToolResult } from './hooks/useMcpAppsToolResult';
+export { useMcpAppsToolInput } from './hooks/useMcpAppsToolInput';
 export { McpAppsClient } from './mcp/appsClient';
 
 export type {
