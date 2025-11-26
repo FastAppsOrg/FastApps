@@ -97,15 +97,15 @@ function AlbumsCarousel({ albums, onSelect }) {
 
 function {ClassName}Inner() {
   const data = useWidgetData() || {};
-  const { albums } = data;
-  const normalizedAlbums = Array.isArray(albums)
-    ? albums
-        .filter((album) => album && album.cover)
-        .map((album) => ({
-          ...album,
-          photos: Array.isArray(album.photos) ? album.photos : [],
-        }))
-    : [];
+  const albumsFromData = Array.isArray(data.albums) ? data.albums : [];
+
+  const normalizedAlbums = albumsFromData
+    .filter((album) => album && album.cover)
+    .map((album) => ({
+      ...album,
+      photos: Array.isArray(album.photos) ? album.photos : [],
+    }));
+
   const limitedAlbums = normalizedAlbums.slice(0, 8);
   const hostContext = useHostContextCompat();
   const isFullscreen = hostContext.displayMode === "fullscreen";
