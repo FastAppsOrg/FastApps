@@ -240,7 +240,7 @@ class OpenAIAppsAdapter(ProtocolAdapter):
 
     def _register_assets_proxy(self, widget_server: "WidgetMCPServer") -> None:
         """Proxy /assets requests to local asset server (same behavior as before)."""
-        app = widget_server.mcp._mcp_server.http_app
+        app = getattr(widget_server.mcp._mcp_server, "http_app", None)
         if app is None:
             app = widget_server.mcp.http_app()
 
