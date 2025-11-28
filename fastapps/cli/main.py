@@ -7,7 +7,6 @@ from fastapps.core.utils import get_cli_version
 
 from .commands.allow_csp import add_csp_domain, list_csp_domains, remove_csp_domain
 from .commands.build import build_command
-from .commands.cloud import cloud
 from .commands.create import create_widget
 from .commands.dev import start_dev_server
 from .commands.init import init_project
@@ -141,11 +140,6 @@ def dev(port, host, mode):
 def build():
     """Build widgets for production."""
     build_command()
-
-
-# Register cloud command group
-cli.add_command(cloud)
-
 
 @cli.command()
 def auth_info():
