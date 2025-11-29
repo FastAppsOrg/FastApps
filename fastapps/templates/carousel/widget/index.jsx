@@ -2,14 +2,15 @@ import React from "react";
 import { AppsSDKUIProvider } from "@openai/apps-sdk-ui/components/AppsSDKUIProvider";
 import { Button } from "@openai/apps-sdk-ui/components/Button";
 import { EmptyMessage } from "@openai/apps-sdk-ui/components/EmptyMessage";
-import { useWidgetProps } from "fastapps";
+import { useWidgetData } from "fastapps";
 import useEmblaCarousel from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Card from "./Card";
 import "./index.css";
 
 function {ClassName}Inner() {
-  const { cards } = useWidgetProps() || {};
+  const data = useWidgetData() || {};
+  const { cards } = data;
 
   const normalizedCards = Array.isArray(cards) ? cards : [];
   const limitedCards = normalizedCards.slice(0, 8);

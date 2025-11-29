@@ -1,10 +1,11 @@
 import React from "react";
 import { AppsSDKUIProvider } from "@openai/apps-sdk-ui/components/AppsSDKUIProvider";
 import { Badge } from "@openai/apps-sdk-ui/components/Badge";
-import { useWidgetProps } from "fastapps";
+import { useWidgetData } from "fastapps";
 
 function {ClassName}Inner() {
-  const { message } = useWidgetProps() || {};
+  const data = useWidgetData() || {};
+  const { message } = data;
 
   return (
     <div className="w-full rounded-3xl border border-default bg-surface shadow-card p-6 sm:p-8 text-left">

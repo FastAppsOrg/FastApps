@@ -157,13 +157,14 @@ def start_asset_server(assets_dir: Path, port: int = 4444):
         httpd.serve_forever()
 
 
-def start_dev_server(port=8001, host="0.0.0.0", mode="hosted"):
+def start_dev_server(port=8001, host="0.0.0.0", mode="hosted", protocol="openai-apps"):
     """Start development server with Cloudflare Tunnel.
 
     Args:
         port: Port for MCP server (default: 8001)
         host: Host to bind server (default: "0.0.0.0")
         mode: Build mode - "hosted" (default) or "inline"
+        protocol: UI protocol adapter ("openai-apps" | "mcp-apps")
     """
 
     # Check if we're in a FastApps project
@@ -221,7 +222,7 @@ def start_dev_server(port=8001, host="0.0.0.0", mode="hosted"):
         sys.path.insert(0, str(Path.cwd()))
         # Reset sys.argv to avoid argparse conflicts in server/main.py
         # Pass mode to server for builder
-        sys.argv = ["server/main.py", "--build", f"--mode={mode}"]
+        sys.argv = ["server/main.py", "--build", f"--mode={mode}", f"--protocol={protocol}"]
         from server.main import app
 
         # Create server config

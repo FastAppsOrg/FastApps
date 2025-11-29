@@ -1,4 +1,4 @@
-import { useOpenAiGlobal } from "./useOpenAiGlobal";
+import { useOpenAiGlobal } from "./useOpenaiGlobal";
 
 /**
  * Hook to access the maximum height constraint from ChatGPT.
@@ -23,4 +23,3 @@ import { useOpenAiGlobal } from "./useOpenAiGlobal";
 export const useMaxHeight = (): number | null => {
   return useOpenAiGlobal("maxHeight");
 };
-

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type SetStateAction } from "react";
-import { useOpenAiGlobal } from "./useOpenAiGlobal";
+import { useOpenAiGlobal } from "./useOpenaiGlobal";
 import type { UnknownObject } from "./types";
 
 /**
@@ -67,4 +67,3 @@ export function useWidgetState<T extends UnknownObject>(
 
   return [widgetState, setWidgetState] as const;
 }
-

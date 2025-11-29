@@ -25,7 +25,15 @@ from typing import Dict
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import FastApps framework
-from fastapps import WidgetBuilder, WidgetMCPServer, BaseWidget, WidgetBuildResult
+from fastapps import (
+    WidgetBuilder,
+    WidgetMCPServer,
+    BaseWidget,
+    WidgetBuildResult,
+    OpenAIAppsAdapter,
+    MCPAppsAdapter,
+    AutoProtocolAdapter,
+)
 import uvicorn
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -77,6 +85,12 @@ parser.add_argument(
     default="hosted",
     help="Widget build mode: hosted (default) or inline"
 )
+parser.add_argument(
+    "--protocol",
+    choices=["openai-apps", "mcp-apps", "auto"],
+    default="openai-apps",
+    help="UI protocol adapter: OpenAI Apps SDK (default) or MCP Apps extension"
+)
 args = parser.parse_args()
 
 # Load build results
@@ -109,10 +123,18 @@ def load_csp_config():
 
 csp_config = load_csp_config()
 
+def select_adapter(protocol: str):
+    if protocol == "mcp-apps":
+        return MCPAppsAdapter()
+    if protocol == "auto":
+        return AutoProtocolAdapter()
+    return OpenAIAppsAdapter()
+
 # Create MCP server with CSP configuration
 server = WidgetMCPServer(
     name="my-widgets",
     widgets=tools,
+    adapter=select_adapter(args.protocol),
     global_resource_domains=csp_config.get("resource_domains", []),
     global_connect_domains=csp_config.get("connect_domains", []),
 )

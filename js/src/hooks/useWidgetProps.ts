@@ -1,4 +1,4 @@
-import { useOpenAiGlobal } from "./useOpenAiGlobal";
+import { useOpenAiGlobal } from "./useOpenaiGlobal";
 
 /**
  * Hook to get widget props from ChatGPT tool output.
@@ -28,4 +28,3 @@ export function useWidgetProps<T extends Record<string, unknown>>(
 
   return props ?? fallback;
 }
-

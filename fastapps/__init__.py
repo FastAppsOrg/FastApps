@@ -18,6 +18,10 @@ Example:
 __author__ = "FastApps Team"
 
 from .builder.compiler import WidgetBuilder, WidgetBuildResult
+from .core.protocol import ProtocolAdapter
+from .core.adapters.openai_apps import OpenAIAppsAdapter
+from .core.adapters.mcp_apps import MCPAppsAdapter
+from .core.adapters.auto import AutoProtocolAdapter
 from .core.server import WidgetMCPServer
 from .core.widget import BaseWidget, ClientContext, UserContext
 from .types.schema import ConfigDict, Field
@@ -45,6 +49,10 @@ __all__ = [
     "ClientContext",
     "UserContext",
     "WidgetMCPServer",
+    "ProtocolAdapter",
+    "OpenAIAppsAdapter",
+    "MCPAppsAdapter",
+    "AutoProtocolAdapter",
     "WidgetBuilder",
     "WidgetBuildResult",
     "Field",
